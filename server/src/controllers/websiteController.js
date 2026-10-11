@@ -35,11 +35,15 @@ exports.getWebsite = async (req, res) => {
 // @route   PUT /api/websites
 exports.updateWebsite = async (req, res) => {
   try {
-    const { sections, seo, appearance, template } = req.body;
+    const { sections, seo, appearance, template, config, slug, status } = req.body;
     const updateData = {};
 
+    if (config) updateData.config = config;
+    if (slug) updateData.slug = slug.toLowerCase().trim();
+    if (status) updateData.status = status;
+    if (template) updateData.template = template;
+
     if (sections) {
-      // Merge sections instead of replacing
       Object.keys(sections).forEach(key => {
         Object.keys(sections[key]).forEach(field => {
           updateData[`sections.${key}.${field}`] = sections[key][field];
@@ -56,18 +60,13 @@ exports.updateWebsite = async (req, res) => {
         updateData[`appearance.${key}`] = appearance[key];
       });
     }
-    if (template) updateData.template = template;
     updateData.lastUpdated = new Date();
 
     const website = await Website.findOneAndUpdate(
       { user: req.user._id },
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true, upsert: true, setDefaultsOnInsert: true }
     );
-
-    if (!website) {
-      return res.status(404).json({ success: false, message: 'Website not found' });
-    }
 
     await ActivityLog.create({
       user: req.user._id,
@@ -170,37 +169,41 @@ exports.unpublishWebsite = async (req, res) => {
 // @route   GET /api/websites/public/:slug
 exports.getPublicWebsite = async (req, res) => {
   try {
-    const website = await Website.findOne({ 
-      slug: req.params.slug,
-      status: 'published'
-    });
+    const website = await Website.findOne({ slug: req.params.slug });
 
     if (!website) {
       return res.status(404).json({ success: false, message: 'Website not found' });
     }
 
-    // Increment views
-    website.views += 1;
-    await website.save({ validateBeforeSave: false });
+    // Increment views safely
+    website.views = (website.views || 0) + 1;
+    await website.save({ validateBeforeSave: false }).catch(() => {});
 
     // Get associated data
-    const [user, services, testimonials] = await Promise.all([
-      User.findById(website.user).select('-password -resetPasswordToken -emailVerificationToken'),
-      Service.find({ user: website.user, status: 'active' }).sort({ sortOrder: 1 }),
-      Testimonial.find({ user: website.user, status: 'active' }).sort({ sortOrder: 1 })
-    ]);
+    let user = null;
+    let services = [];
+    let testimonials = [];
+
+    if (website.user) {
+      [user, services, testimonials] = await Promise.all([
+        User.findById(website.user).select('-password -resetPasswordToken -emailVerificationToken'),
+        Service.find({ user: website.user, status: 'active' }).sort({ sortOrder: 1 }),
+        Testimonial.find({ user: website.user, status: 'active' }).sort({ sortOrder: 1 })
+      ]);
+    }
 
     res.status(200).json({
       success: true,
       data: {
         website,
-        astrologer: {
+        config: website.config,
+        astrologer: user ? {
           name: user.name,
           avatar: user.avatar,
           profile: user.profile,
           phone: user.phone,
           email: user.email
-        },
+        } : null,
         services,
         testimonials
       }
@@ -215,49 +218,59 @@ exports.getPublicWebsite = async (req, res) => {
 // @route   POST /api/websites/public/:slug/lead
 exports.submitPublicLead = async (req, res) => {
   try {
-    const website = await Website.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    });
+    const website = await Website.findOne({ slug: req.params.slug });
+    let targetUserId = website?.user;
 
-    if (!website) {
-      return res.status(404).json({ success: false, message: 'Website not found' });
+    if (!targetUserId) {
+      const defaultUser = await User.findOne();
+      targetUserId = defaultUser?._id;
     }
 
     const lead = await Lead.create({
-      user: website.user,
-      website: website._id,
-      ...req.body,
+      user: targetUserId,
+      website: website?._id,
+      name: req.body.name,
+      email: req.body.email || '',
+      phone: req.body.phone || '',
+      whatsapp: req.body.whatsapp || req.body.phone || '',
+      service: req.body.service || '',
+      dateOfBirth: req.body.dateOfBirth || '',
+      timeOfBirth: req.body.timeOfBirth || '',
+      placeOfBirth: req.body.placeOfBirth || '',
+      message: req.body.message || '',
       source: 'website',
+      status: 'new',
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
       referrer: req.headers['referer']
     });
 
-    // Notify astrologer
-    await Notification.create({
-      user: website.user,
-      type: 'lead_received',
-      title: 'New Enquiry Received! 📩',
-      message: `${req.body.name} has sent you a consultation request.`,
-      link: '/dashboard/leads'
-    });
+    if (targetUserId) {
+      await Notification.create({
+        user: targetUserId,
+        type: 'lead_received',
+        title: 'New Enquiry Received! 📩',
+        message: `${req.body.name} has sent you a consultation request.`,
+        link: '/dashboard/leads'
+      }).catch(err => console.warn('Notification create warning:', err.message));
 
-    await ActivityLog.create({
-      user: website.user,
-      action: 'lead_received',
-      description: `New lead from ${req.body.name}`,
-      targetType: 'Lead',
-      targetId: lead._id
-    });
+      await ActivityLog.create({
+        user: targetUserId,
+        action: 'lead_received',
+        description: `New lead from ${req.body.name}`,
+        targetType: 'Lead',
+        targetId: lead._id
+      }).catch(err => console.warn('ActivityLog warning:', err.message));
+    }
 
     res.status(201).json({
       success: true,
+      data: lead,
       message: 'Your enquiry has been submitted successfully! We will get back to you soon.'
     });
   } catch (error) {
     console.error('Submit lead error:', error);
-    res.status(500).json({ success: false, message: 'Error submitting enquiry' });
+    res.status(500).json({ success: false, message: error.message || 'Error submitting enquiry' });
   }
 };
 

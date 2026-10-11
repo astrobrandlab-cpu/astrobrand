@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth, API_URL } from './AuthContext';
 
 const STORAGE_KEY = 'astrobrand_website_config';
 
@@ -157,7 +157,7 @@ export const initialWebsiteData = {
 const WebsiteContext = createContext();
 
 export const WebsiteProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const [website, setWebsite] = useState(() => {
     try {
@@ -174,6 +174,34 @@ export const WebsiteProvider = ({ children }) => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState(null);
+
+  // Load website from MongoDB when authenticated
+  useEffect(() => {
+    if (token) {
+      fetch(`${API_URL}/websites`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            const dbConfig = data.data.config || {};
+            setWebsite(prev => {
+              const merged = {
+                ...initialWebsiteData,
+                ...prev,
+                ...dbConfig,
+                slug: data.data.slug || prev.slug
+              };
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+              } catch {}
+              return merged;
+            });
+          }
+        })
+        .catch(err => console.warn('Could not load website from MongoDB, using local fallback', err));
+    }
+  }, [token]);
 
   // Automatically personalize website when logged in user changes
   useEffect(() => {
@@ -212,8 +240,8 @@ export const WebsiteProvider = ({ children }) => {
     }
   }, [user?.name]);
 
-  // Sync with localStorage whenever updated
-  const saveWebsite = (newData) => {
+  // Persist with MongoDB and sync localStorage
+  const saveWebsite = async (newData) => {
     setIsSaving(true);
     const updated = { ...website, ...newData };
     setWebsite(updated);
@@ -221,8 +249,29 @@ export const WebsiteProvider = ({ children }) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       setLastSavedTime(new Date());
     } catch (e) {
-      console.error('Failed to save website data', e);
+      console.error('Failed to save website data locally', e);
     }
+
+    // Persist directly to MongoDB Atlas
+    if (token) {
+      try {
+        await fetch(`${API_URL}/websites`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            config: updated,
+            slug: updated.slug,
+            status: updated.status || 'published'
+          })
+        });
+      } catch (err) {
+        console.warn('Failed to sync website to MongoDB Atlas', err);
+      }
+    }
+
     setTimeout(() => {
       setIsSaving(false);
     }, 600);

@@ -121,8 +121,11 @@ const schemas = {
     template: Joi.string(),
     sections: Joi.object(),
     seo: Joi.object(),
-    appearance: Joi.object()
-  }).min(1),
+    appearance: Joi.object(),
+    config: Joi.object(),
+    slug: Joi.string(),
+    status: Joi.string()
+  }).min(1).unknown(true),
 
   createPlan: Joi.object({
     name: Joi.string().trim().required(),

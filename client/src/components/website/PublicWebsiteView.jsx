@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../../context/AuthContext';
 import {
   Calendar, Clock, Star, CheckCircle2, Shield, Heart,
   Sparkles, Compass, MessageCircle, Send, ArrowRight,
@@ -76,31 +77,44 @@ export const PublicWebsiteView = ({ website, isPreview = false, onBookService = 
     scrollToSection('consultation');
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) {
       alert('Please fill in your name and phone number.');
       return;
     }
 
-    // Save lead locally so it shows in Leads page
+    const newLead = {
+      name: formData.name,
+      phone: formData.phone,
+      email: formData.email,
+      service: formData.service,
+      dateOfBirth: formData.dateOfBirth,
+      timeOfBirth: formData.timeOfBirth,
+      placeOfBirth: formData.placeOfBirth,
+      message: formData.message,
+      status: 'new'
+    };
+
+    // Save lead directly to MongoDB database
+    try {
+      const slug = website?.slug || 'dr-mehak';
+      await fetch(`${API_URL}/websites/public/${slug}/lead`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead)
+      });
+    } catch (err) {
+      console.warn('Failed to save lead to MongoDB database', err);
+    }
+
+    // Save lead locally as instant cache so it displays immediately in the dashboard
     try {
       const existingLeads = JSON.parse(localStorage.getItem('astrobrand_leads') || '[]');
-      const newLead = {
-        id: Date.now(),
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        service: formData.service,
-        dateOfBirth: formData.dateOfBirth,
-        timeOfBirth: formData.timeOfBirth,
-        placeOfBirth: formData.placeOfBirth,
-        message: formData.message,
-        status: 'New',
-        createdAt: new Date().toISOString(),
-        source: 'Landing Page'
-      };
-      localStorage.setItem('astrobrand_leads', JSON.stringify([newLead, ...existingLeads]));
+      localStorage.setItem('astrobrand_leads', JSON.stringify([
+        { ...newLead, id: Date.now(), createdAt: new Date().toISOString(), source: 'Landing Page' },
+        ...existingLeads
+      ]));
     } catch (err) {
       console.warn('Failed to save lead to localStorage', err);
     }

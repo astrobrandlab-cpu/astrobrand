@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Mail, Phone, MessageSquare } from 'lucide-react';
+import { useAuth, API_URL } from '../../context/AuthContext';
 
 const Leads = () => {
+  const { token } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
   const [leads, setLeads] = useState(() => {
     try {
       const local = JSON.parse(localStorage.getItem('astrobrand_leads') || '[]');
@@ -17,15 +20,52 @@ const Leads = () => {
       }
       return defaultLeads;
     } catch {
-      return [
-        { id: 1, name: 'Rahul Sharma', email: 'rahul.s@email.com', phone: '+91 9876543210', service: 'Marriage Compatibility', status: 'New', date: 'Oct 5, 2026' },
-        { id: 2, name: 'Priya Patel', email: 'priya.p@email.com', phone: '+91 8765432109', service: 'Career Reading', status: 'Contacted', date: 'Oct 4, 2026' },
-        { id: 3, name: 'Amit Kumar', email: 'amit.k@email.com', phone: '+91 7654321098', service: 'Full Birth Chart', status: 'Converted', date: 'Oct 3, 2026' },
-        { id: 4, name: 'Neha Singh', email: 'neha.s@email.com', phone: '+91 6543210987', service: 'Tarot Session', status: 'New', date: 'Oct 2, 2026' },
-        { id: 5, name: 'Vikram Das', email: 'vikram.d@email.com', phone: '+91 5432109876', service: 'Yearly Forecast', status: 'Closed', date: 'Oct 1, 2026' },
-      ];
+      return [];
     }
   });
+
+  // Fetch real leads from MongoDB database
+  useEffect(() => {
+    if (token) {
+      fetch(`${API_URL}/leads`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.length > 0) {
+            const formatted = data.data.map(l => ({
+              id: l._id || l.id,
+              name: l.name,
+              email: l.email || 'N/A',
+              phone: l.phone || 'N/A',
+              service: l.service || 'Consultation',
+              status: l.status ? (l.status.charAt(0).toUpperCase() + l.status.slice(1)) : 'New',
+              date: new Date(l.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            }));
+            setLeads(formatted);
+          }
+        })
+        .catch(err => console.warn('Could not fetch leads from server', err));
+    }
+  }, [token]);
+
+  const handleStatusChange = async (leadId, newStatus) => {
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: newStatus } : l));
+    if (token && typeof leadId === 'string' && leadId.length === 24) {
+      try {
+        await fetch(`${API_URL}/leads/${leadId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: newStatus.toLowerCase() })
+        });
+      } catch (err) {
+        console.warn('Failed to update lead status on server', err);
+      }
+    }
+  };
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -95,7 +135,8 @@ const Leads = () => {
                         lead.status === 'Converted' ? 'bg-green-100 text-green-700' :
                         'bg-gray-100 text-gray-700'
                       }`}
-                      defaultValue={lead.status}
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value)}
                     >
                       <option value="New">New</option>
                       <option value="Contacted">Contacted</option>

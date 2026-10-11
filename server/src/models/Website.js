@@ -24,6 +24,7 @@ const websiteSchema = new mongoose.Schema({
   },
   publishedAt: Date,
   lastUpdated: Date,
+  config: { type: mongoose.Schema.Types.Mixed },
 
   // SEO
   seo: {
