@@ -69,12 +69,12 @@ const DashboardLayout = () => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-[280px] bg-[#FAF7F2] border-r border-[#E8E2D9] 
+        fixed lg:sticky lg:top-0 inset-y-0 left-0 z-50 w-[280px] h-screen bg-[#FAF7F2] border-r border-[#E8E2D9] shrink-0
         transform transition-transform duration-300 ease-in-out flex flex-col
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo Area */}
-        <div className="h-20 flex items-center px-6 border-b border-[#E8E2D9] justify-between">
+        <div className="h-20 flex items-center px-6 border-b border-[#E8E2D9] justify-between shrink-0">
           <span className="text-2xl font-serif font-medium text-[#1A1A1A] tracking-tight">Astro Brand.</span>
           <button 
             className="lg:hidden text-[#4A4A4A] hover:text-[#1A1A1A]"
@@ -113,7 +113,7 @@ const DashboardLayout = () => {
         </div>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-[#E8E2D9]">
+        <div className="p-4 border-t border-[#E8E2D9] shrink-0 bg-[#FAF7F2]">
           <button 
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 text-[#D9534F] hover:bg-[#FDFBF7] border border-transparent hover:border-[#F2EFEA] rounded-xl transition-all font-medium"
@@ -125,7 +125,7 @@ const DashboardLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 min-h-screen bg-[#F6F4F0]">
         
         {/* Top Header */}
         <header className="h-20 bg-[#FAF7F2] border-b border-[#E8E2D9] flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
@@ -169,8 +169,8 @@ const DashboardLayout = () => {
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-[1200px] mx-auto">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-[1200px] mx-auto pb-16">
             <Outlet />
           </div>
         </div>
