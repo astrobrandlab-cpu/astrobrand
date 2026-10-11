@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-[#FAF7F2] text-[#1A1A1A] antialiased;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  h1, h2, h3, .font-serif {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #A48255 0%, #D4AF37 50%, #8E6E44 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-gradient-bg {
+  background: linear-gradient(135deg, #A48255 0%, #C4A265 50%, #8E6E44 100%);
+}
+
+.cosmic-glow {
+  box-shadow: 0 0 50px -10px rgba(164, 130, 85, 0.3);
+}
+
+.cosmic-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 226, 217, 0.8);
+}
