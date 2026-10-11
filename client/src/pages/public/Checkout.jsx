@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { API_URL } from '../../context/AuthContext';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ const Checkout = () => {
     if (formData.fullName && formData.email && formData.password) {
       try {
         setLoading(true);
-        const res = await fetch('http://localhost:5005/api/auth/register', {
+        const res = await fetch(`${API_URL}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -46,7 +47,7 @@ const Checkout = () => {
         } else {
           // If email exists, try login
           if (data.message === 'An account with this email already exists') {
-            const loginRes = await fetch('http://localhost:5005/api/auth/login', {
+            const loginRes = await fetch(`${API_URL}/auth/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -89,7 +90,7 @@ const Checkout = () => {
       setLoading(true);
 
       // Create Order
-      const orderRes = await fetch('http://localhost:5005/api/payments/create-order', {
+      const orderRes = await fetch(`${API_URL}/payments/create-order`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -111,7 +112,7 @@ const Checkout = () => {
       const { orderId } = orderData.data;
 
       // Automatically verify without showing Razorpay for testing
-      const verifyRes = await fetch('http://localhost:5005/api/payments/verify', {
+      const verifyRes = await fetch(`${API_URL}/payments/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

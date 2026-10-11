@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const API_URL = 'http://localhost:5005/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005/api';
 
 const TOKEN_KEY = 'astrobrand_token';
 const USER_KEY = 'astrobrand_user';
