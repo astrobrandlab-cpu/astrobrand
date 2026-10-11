@@ -24,6 +24,7 @@ const Testimonial = require('../models/Testimonial');
 // Platform's own domains — inhe custom domain se treat nahi karna
 const PLATFORM_HOSTS = [
   'localhost',
+  '127.0.0.1',
   'astrobrand.in',
   'www.astrobrand.in',
   'api.astrobrand.in',
@@ -37,6 +38,17 @@ const PLATFORM_HOSTS = [
 const isPlatformDomain = (host) => {
   if (!host) return true;
   const cleanHost = host.split(':')[0].toLowerCase(); // remove port
+  if (
+    cleanHost === 'localhost' ||
+    cleanHost === '127.0.0.1' ||
+    cleanHost.includes('onrender.com') ||
+    cleanHost.includes('render.com') ||
+    cleanHost.includes('vercel.app') ||
+    cleanHost.includes('netlify.app') ||
+    cleanHost.includes('astrobrand')
+  ) {
+    return true;
+  }
   return PLATFORM_HOSTS.some(pd => cleanHost === pd || cleanHost.endsWith(`.${pd}`));
 };
 
@@ -45,10 +57,21 @@ const isPlatformDomain = (host) => {
  */
 const customDomainMiddleware = async (req, res, next) => {
   try {
+    // ALWAYS bypass for API requests, health check, uploads, and static assets
+    const currentPath = req.originalUrl || req.url || req.path || '';
+    if (
+      currentPath.startsWith('/api') ||
+      currentPath.startsWith('/uploads') ||
+      currentPath === '/' ||
+      currentPath === '/health'
+    ) {
+      return next();
+    }
+
     const host = req.headers.host || '';
     const cleanHost = host.split(':')[0].toLowerCase();
 
-    // Skip for platform's own domains and API routes
+    // Skip for platform's own domains
     if (isPlatformDomain(cleanHost)) {
       return next();
     }
