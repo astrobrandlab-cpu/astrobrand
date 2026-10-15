@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import heroImage from '../../assets/Dreamy Crescent Arch Portrait.png';
 
-const Hero = () => {
+const Hero = ({ onBookCall }) => {
   return (
     <section className="relative w-full h-[90vh] flex items-center justify-start overflow-hidden">
       {/* Background Image */}
@@ -40,12 +40,26 @@ const Hero = () => {
           </p>
           
           {/* Button */}
-          <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} data-aos="zoom-in" data-aos-delay="450" className="px-8 py-4 rounded-full bg-[#1F1F1F] text-white font-medium text-lg hover:bg-black transition-all flex items-center gap-3 w-fit mb-14 shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
-            Book a Strategy Call for ₹99 
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </Link>
+          {onBookCall ? (
+            <button
+              onClick={onBookCall}
+              data-aos="zoom-in"
+              data-aos-delay="450"
+              className="px-8 py-4 rounded-full bg-[#1F1F1F] text-white font-medium text-lg hover:bg-black transition-all flex items-center gap-3 w-fit mb-14 shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
+            >
+              Book a Strategy Call for ₹99 
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          ) : (
+            <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} data-aos="zoom-in" data-aos-delay="450" className="px-8 py-4 rounded-full bg-[#1F1F1F] text-white font-medium text-lg hover:bg-black transition-all flex items-center gap-3 w-fit mb-14 shadow-xl hover:shadow-2xl hover:-translate-y-0.5">
+              Book a Strategy Call for ₹99 
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+          )}
           
           {/* Stats */}
           <div className="flex flex-wrap items-center gap-6 md:gap-12 pt-6" data-aos="fade-up" data-aos-delay="600">

@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Hero from '../components/layout/Hero';
+import StrategyCallModal from '../components/modals/StrategyCallModal';
 import mockupImage from '../assets/mockup.jpg';
 import archwayImage from '../assets/archway.jpg';
 import ctaBackground from '../assets/cta_bg.jpg';
@@ -239,7 +240,7 @@ const ServicesDiagram = () => {
   );
 };
 
-const ProblemSolution = () => (
+const ProblemSolution = ({ onBookCall }) => (
   <section className="py-24 md:py-32 bg-gradient-to-br from-[#FAF8F5] to-[#F3EBEB] overflow-hidden relative">
 
     {/* Abstract background shapes */}
@@ -273,9 +274,19 @@ const ProblemSolution = () => (
           Many astrologers have deep knowledge, but struggle with visibility, consistent content, website, leads and conversions. We bridge that gap with a complete brand and growth system.
         </p>
 
-        <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} className="px-10 py-4 bg-[#232121] text-white rounded-full text-[17px] font-medium hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg hover:-translate-y-0.5 w-fit">
-          Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
-        </Link>
+        {onBookCall ? (
+          <button
+            type="button"
+            onClick={onBookCall}
+            className="px-10 py-4 bg-[#232121] text-white rounded-full text-[17px] font-medium hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg hover:-translate-y-0.5 w-fit cursor-pointer"
+          >
+            Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
+          </button>
+        ) : (
+          <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} className="px-10 py-4 bg-[#232121] text-white rounded-full text-[17px] font-medium hover:bg-black transition-all flex items-center justify-center gap-3 shadow-lg hover:-translate-y-0.5 w-fit">
+            Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
+          </Link>
+        )}
       </div>
 
     </div>
@@ -283,99 +294,207 @@ const ProblemSolution = () => (
 );
 
 const PricingPaths = () => {
-  const paths = [
+  const plans = [
     {
-      name: 'Orbit',
-      subtitle: 'Build Your Presence',
-      price: '15,000',
-      icon: (
-        <svg className="w-[60px] h-[60px] text-[#8B6532]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-        </svg>
-      ),
-      color: 'bg-[#FDF6EA]',
-      btnColor: 'bg-[#B4884B]'
+      name: 'Launch',
+      price: '999',
+      displayPrice: '₹999',
+      btnText: 'Choose Launch',
+      btnClasses: 'bg-[#1A1A1A] hover:bg-black text-white font-medium'
     },
     {
-      name: 'Aura',
-      subtitle: 'Become a Recognised\nAuthority',
-      price: '25,000',
-      icon: (
-        <svg className="w-[60px] h-[60px] text-[#5E3F39]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="4" strokeWidth="1.5" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2v2m0 16v2m8-10h2M2 12h2m13.657-7.071l1.414 1.414M4.929 19.071l1.414-1.414m0-14.142l1.414 1.414m11.314 11.314l1.414 1.414" />
-        </svg>
-      ),
-      color: 'bg-[#F2E8F4]',
-      btnColor: 'bg-[#4B3E52]'
+      name: 'Growth',
+      price: '1,999',
+      displayPrice: '₹1,999',
+      badge: 'Popular',
+      btnText: 'Choose Growth',
+      btnClasses: 'bg-[#967C5A] hover:bg-[#836b4d] text-white font-bold shadow-md shadow-[#967C5A]/25'
     },
     {
-      name: 'Celestial',
-      subtitle: 'Build a Premium\nPersonal Brand',
-      price: '45,000',
-      icon: (
-        <svg className="w-[60px] h-[60px] text-[#9A5C41]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 2l2.4 7.4L22 12l-7.6 2.6L12 22l-2.4-7.4L2 12l7.6-2.6L12 2z" />
-        </svg>
-      ),
-      color: 'bg-[#FBEAE7]',
-      btnColor: 'bg-[#B16A4C]'
-    },
-    {
-      name: 'Astro Brand OS',
-      subtitle: 'Complete Digital\nGrowth System',
-      price: '75,000+',
-      icon: (
-        <svg className="w-[60px] h-[60px] text-[#2C3B24]" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="5" strokeWidth="1.5" />
-          <ellipse cx="12" cy="12" rx="10" ry="3" transform="rotate(-25 12 12)" strokeWidth="1.5" />
-        </svg>
-      ),
-      color: 'bg-[#E5F1E5]',
-      btnColor: 'bg-[#435939]'
+      name: 'Scale',
+      price: '2,999',
+      displayPrice: '₹2,999',
+      btnText: 'Choose Scale',
+      btnClasses: 'bg-[#1A1A1A] hover:bg-black text-white font-medium'
     }
   ];
 
+  const featureRows = [
+    {
+      feature: 'Landing page',
+      launch: '✓',
+      growth: '✓',
+      scale: '✓'
+    },
+    {
+      feature: 'Up to 3 services',
+      launch: '✓',
+      growth: '✓',
+      scale: '✓'
+    },
+    {
+      feature: 'WhatsApp leads',
+      launch: '✓',
+      growth: '✓',
+      scale: '✓'
+    },
+    {
+      feature: 'Payment gateway',
+      launch: '',
+      growth: '✓',
+      scale: '✓'
+    },
+    {
+      feature: 'Product catalogue',
+      launch: '',
+      growth: '',
+      scale: '✓'
+    },
+    {
+      feature: 'Monthly tech support calls',
+      launch: '',
+      growth: '',
+      scale: '2'
+    }
+  ];
+
+  const renderCellContent = (val) => {
+    if (val === '✓') {
+      return <span className="text-[#1A1A1A] font-bold text-lg leading-none">✓</span>;
+    }
+    if (val) {
+      return <span className="text-[#1A1A1A] font-bold text-base">{val}</span>;
+    }
+    return <span className="text-gray-300 font-light select-none">—</span>;
+  };
+
   return (
-    <section className="py-20 md:py-24 bg-gradient-to-br from-[#4A3B32] to-[#2C211C] px-4 md:px-0">
-      <div className="max-w-[1400px] w-full mx-auto bg-[#FAF7F2] rounded-3xl md:rounded-[5rem] px-6 py-16 sm:px-12 lg:px-20 text-center relative shadow-2xl overflow-hidden">
+    <section id="pricing" className="pt-10 md:pt-14 pb-4 md:pb-6 bg-[#FAF7F2] border-t border-[#E8E2D9] relative">
+      <div className="max-w-[1140px] w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Section Header with compact padding - no excess blank space */}
+        <div className="text-center mb-8 md:mb-10">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <div className="h-[1px] w-10 md:w-14 bg-[#967C5A]"></div>
+            <span className="text-[#967C5A] text-[11px] md:text-[12px] font-bold tracking-[0.25em] uppercase">
+              Choose Your Growth Path
+            </span>
+            <div className="h-[1px] w-10 md:w-14 bg-[#967C5A]"></div>
+          </div>
 
-        {/* Floating sparkles */}
-        <div className="absolute top-20 left-[35%] text-[#D4AF37] opacity-60">
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 9.5L23 12l-9.5 1.5L12 23l-1.5-9.5L1 12l9.5-1.5z" /></svg>
-        </div>
-        <div className="absolute top-28 right-[30%] text-[#D4AF37] opacity-60 scale-75">
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 9.5L23 12l-9.5 1.5L12 23l-1.5-9.5L1 12l9.5-1.5z" /></svg>
-        </div>
-
-        <div className="flex items-center justify-center gap-4 mb-20 relative z-10" data-aos="fade-up">
-          <div className="h-[1px] w-12 md:w-16 bg-[#967C5A]"></div>
-          <span className="text-[#967C5A] text-[12px] font-bold tracking-[0.25em] uppercase">
-            Choose Your Growth Path
-          </span>
-          <div className="h-[1px] w-12 md:w-16 bg-[#967C5A]"></div>
+          <h2 className="text-3xl sm:text-4xl md:text-[3rem] font-sans font-extrabold text-[#1A1A1A] tracking-tight mb-3">
+            Launch, Growth, or Scale
+          </h2>
+          <p className="text-[#555] text-sm md:text-base max-w-xl mx-auto">
+            Everything you need to showcase your wisdom, collect inquiries, and take online payments without technical hassle.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10 relative z-10">
-          {paths.map((p, i) => (
-            <div key={i} data-aos="fade-up" data-aos-delay={i * 100} className={`${p.color} rounded-[4rem] md:rounded-[6rem] pt-16 pb-14 px-4 flex flex-col items-center hover:-translate-y-2 transition-transform duration-500 group shadow-sm hover:shadow-lg`}>
-              <div className="mb-10 transform group-hover:scale-110 transition-transform duration-500">
-                {p.icon}
-              </div>
-              <h3 className="text-[26px] font-medium text-[#1A1A1A] mb-3 tracking-tight">{p.name}</h3>
-              <p className="text-[13.5px] text-[#4A4A4A] h-10 leading-tight whitespace-pre-line font-medium mb-2">
-                {p.subtitle}
-              </p>
-              <div className="mt-8 mb-12 flex items-baseline gap-1">
-                <span className="text-[30px] font-semibold text-[#1A1A1A] tracking-tight">₹{p.price}</span>
-                <span className="text-[14px] font-bold text-[#1A1A1A]">/ month</span>
-              </div>
-              <Link to="/checkout" state={{ plan: { name: p.name, price: p.price } }} className={`w-12 h-12 rounded-full ${p.btnColor} text-white flex items-center justify-center hover:scale-110 transition-transform shadow-md`}>
-                <span className="text-xl leading-none">→</span>
-              </Link>
-            </div>
-          ))}
+        {/* Pricing Matrix Card */}
+        <div className="bg-white border border-[#E8E2D9] rounded-2xl md:rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.06)] overflow-hidden">
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full min-w-[650px] text-left border-collapse">
+              <thead>
+                <tr className="bg-[#FAF7F2] border-b border-[#E8E2D9]">
+                  <th className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-base md:text-lg w-[31%] sticky left-0 bg-[#FAF7F2] md:static z-10">
+                    Features
+                  </th>
+                  <th className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-base md:text-lg w-[23%]">
+                    Launch
+                  </th>
+                  <th className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-base md:text-lg w-[23%]">
+                    <div className="flex items-center gap-2">
+                      <span>Growth</span>
+                      <span className="text-[10px] tracking-wider uppercase font-bold px-2 py-0.5 rounded-full bg-[#967C5A]/15 text-[#967C5A] border border-[#967C5A]/30">
+                        Popular
+                      </span>
+                    </div>
+                  </th>
+                  <th className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-base md:text-lg w-[23%]">
+                    Scale
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-[#F0EBE1]">
+                {featureRows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-[#FAF7F2]/60 transition-colors">
+                    <td className="py-3.5 px-6 sm:px-8 text-[#1A1A1A] text-[15px] font-medium sticky left-0 bg-white hover:bg-[#FAF7F2]/60 md:static z-10">
+                      {row.feature}
+                    </td>
+                    <td className="py-3.5 px-6 sm:px-8">
+                      {renderCellContent(row.launch)}
+                    </td>
+                    <td className="py-3.5 px-6 sm:px-8">
+                      {renderCellContent(row.growth)}
+                    </td>
+                    <td className="py-3.5 px-6 sm:px-8">
+                      {renderCellContent(row.scale)}
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Price Row matching screenshot */}
+                <tr className="border-t-2 border-[#E8E2D9] bg-[#FAF7F2]/70">
+                  <td className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-base md:text-lg sticky left-0 bg-[#FAF7F2] md:static z-10">
+                    Price
+                  </td>
+                  <td className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-xl md:text-2xl tracking-tight">
+                    ₹999
+                  </td>
+                  <td className="py-4.5 px-6 sm:px-8 font-bold text-xl md:text-2xl tracking-tight text-[#967C5A]">
+                    ₹1,999
+                  </td>
+                  <td className="py-4.5 px-6 sm:px-8 text-[#1A1A1A] font-bold text-xl md:text-2xl tracking-tight">
+                    ₹2,999
+                  </td>
+                </tr>
+
+                {/* Action CTA Row */}
+                <tr className="border-t border-[#E8E2D9] bg-white">
+                  <td className="py-4 px-6 sm:px-8 text-gray-500 text-xs sm:text-sm font-medium sticky left-0 bg-white md:static z-10">
+                    <span className="hidden sm:inline">Ready to get started?</span>
+                  </td>
+                  {plans.map((p, i) => (
+                    <td key={i} className="py-4 px-6 sm:px-8">
+                      <Link
+                        to="/checkout"
+                        state={{ plan: { name: p.name, price: p.price } }}
+                        className={`inline-flex items-center justify-center w-full py-2.5 px-4 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-sm ${p.btnClasses}`}
+                      >
+                        {p.btnText}
+                      </Link>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+
+        {/* Footnote and Trust Indicators */}
+        <div className="mt-5 flex flex-col md:flex-row items-center justify-between text-[#666] text-xs sm:text-sm px-2 gap-3">
+          <p className="text-center md:text-left">
+            All plans include 24-48h fast setup, custom domain support, and dedicated assistance.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-6 text-[#444] font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="text-[#967C5A]">✓</span> 24-48h Setup
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[#967C5A]">✓</span> Secure Payment
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[#967C5A]">✓</span> WhatsApp Ready
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile swipe hint */}
+        <div className="md:hidden text-center mt-2.5 text-xs text-gray-500">
+          ← Swipe horizontally to see all features →
+        </div>
+
       </div>
     </section>
   );
@@ -448,16 +567,8 @@ const ProcessTimeline = () => {
   ];
 
   return (
-    <section className="py-24 bg-[#FAF7F2] overflow-hidden relative">
+    <section className="pt-6 md:pt-8 pb-20 md:pb-24 bg-[#FAF7F2] overflow-hidden relative">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-
-        {/* Floating sparkles */}
-        <div className="absolute top-10 left-[25%] text-[#D4AF37] opacity-60 scale-75 hidden md:block">
-          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 9.5L23 12l-9.5 1.5L12 23l-1.5-9.5L1 12l9.5-1.5z" /></svg>
-        </div>
-        <div className="absolute top-12 right-[25%] text-[#D4AF37] opacity-60 scale-75 hidden md:block">
-          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 9.5L23 12l-9.5 1.5L12 23l-1.5-9.5L1 12l9.5-1.5z" /></svg>
-        </div>
 
         <span className="text-[#967C5A] text-[11px] font-bold tracking-[0.25em] uppercase mb-4 block">
           How It Works
@@ -533,7 +644,7 @@ const Testimonials = () => (
   </section>
 );
 
-const BottomCTA = () => (
+const BottomCTA = ({ onBookCall }) => (
   <section className="relative w-full overflow-hidden bg-[#FAF7F2]">
     <div className="relative w-full h-[550px] md:h-[650px] flex items-center">
       {/* Background Image */}
@@ -555,9 +666,19 @@ const BottomCTA = () => (
           <p className="text-white/90 text-[15.5px] font-medium leading-relaxed mb-8 max-w-[420px] drop-shadow-md">
             A 20-minute focused call to understand your brand, identify gaps and create a 90-day growth plan.
           </p>
-          <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} className="px-10 py-4 bg-[#FDFBF7] text-[#1A1A1A] rounded-full text-[16px] font-bold hover:bg-white transition-all flex items-center justify-center gap-3 shadow-2xl hover:scale-105 w-fit">
-            Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
-          </Link>
+          {onBookCall ? (
+            <button
+              type="button"
+              onClick={onBookCall}
+              className="px-10 py-4 bg-[#FDFBF7] text-[#1A1A1A] rounded-full text-[16px] font-bold hover:bg-white transition-all flex items-center justify-center gap-3 shadow-2xl hover:scale-105 w-fit cursor-pointer"
+            >
+              Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
+            </button>
+          ) : (
+            <Link to="/checkout" state={{ plan: { name: 'Strategy Call', price: '99' } }} className="px-10 py-4 bg-[#FDFBF7] text-[#1A1A1A] rounded-full text-[16px] font-bold hover:bg-white transition-all flex items-center justify-center gap-3 shadow-2xl hover:scale-105 w-fit">
+              Book a Strategy Call for ₹99 <span className="text-xl leading-none">→</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -635,6 +756,8 @@ const Footer = () => (
 );
 
 const Home = () => {
+  const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
+
   useEffect(() => {
     AOS.init({
       duration: 800,
@@ -643,18 +766,25 @@ const Home = () => {
     });
   }, []);
 
+  const openStrategyModal = () => setIsStrategyModalOpen(true);
+
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
-      <Hero />
+      <Hero onBookCall={openStrategyModal} />
       <TrustedBy />
       <LandingPageMockup />
       <ServicesDiagram />
-      <ProblemSolution />
+      <ProblemSolution onBookCall={openStrategyModal} />
       <PricingPaths />
       <ProcessTimeline />
       <Testimonials />
-      <BottomCTA />
+      <BottomCTA onBookCall={openStrategyModal} />
       <Footer />
+
+      <StrategyCallModal
+        isOpen={isStrategyModalOpen}
+        onClose={() => setIsStrategyModalOpen(false)}
+      />
     </div>
   );
 };

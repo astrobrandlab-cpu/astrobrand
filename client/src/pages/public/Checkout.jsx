@@ -10,8 +10,60 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState(null);
   
-  // You can pass plan details via React Router state, defaulting to the 999 plan if none provided
-  const plan = location.state?.plan || { name: 'Landing Page Offer', price: '999' };
+  // You can pass plan details via React Router state, defaulting to Launch plan if none provided
+  const plan = location.state?.plan || { name: 'Launch', price: '999' };
+
+  const planFeaturesMap = {
+    'Launch': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Mobile responsive design'
+    ],
+    'Growth': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Payment gateway',
+      'Mobile responsive design'
+    ],
+    'Scale': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Payment gateway',
+      'Product catalogue',
+      '2 Monthly tech support calls'
+    ],
+    'Orbit': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Mobile responsive design'
+    ],
+    'Aura': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Payment gateway',
+      'Mobile responsive design'
+    ],
+    'Celestial': [
+      'Landing page',
+      'Up to 3 services',
+      'WhatsApp leads',
+      'Payment gateway',
+      'Product catalogue',
+      '2 Monthly tech support calls'
+    ]
+  };
+
+  const currentFeatures = planFeaturesMap[plan.name] || [
+    'Premium Astrology Template',
+    'Mobile Responsive Design',
+    'WhatsApp Leads',
+    'Custom Domain Support'
+  ];
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -109,34 +161,74 @@ const Checkout = () => {
         return;
       }
 
-      const { orderId } = orderData.data;
+      const { orderId, amount, currency, razorpayKeyId, testMode } = orderData.data;
 
-      // Automatically verify without showing Razorpay for testing
-      const verifyRes = await fetch(`${API_URL}/payments/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+      // Open Razorpay Checkout modal
+      const options = {
+        key: razorpayKeyId || 'rzp_live_TkbB2WtliNwLDG',
+        amount: amount,
+        currency: currency || 'INR',
+        name: 'Astro Brand Lab',
+        description: `Subscription: ${plan.name}`,
+        order_id: orderId,
+        prefill: {
+          name: formData.fullName || user?.name || '',
+          email: formData.email || user?.email || '',
+          contact: formData.phone || user?.phone || ''
         },
-        body: JSON.stringify({
-          razorpayOrderId: orderId,
-          razorpayPaymentId: 'pay_test_dummy_id',
-          razorpaySignature: 'dummy_signature',
-          testMode: true // This will bypass signature verification on the backend
-        })
-      });
-      
-      const verifyData = await verifyRes.json();
-      
-      if (verifyData.success) {
-        navigate('/dashboard');
+        theme: {
+          color: '#1A1A1A'
+        },
+        handler: async function (response) {
+          try {
+            setLoading(true);
+            const verifyRes = await fetch(`${API_URL}/payments/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+              },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                testMode: testMode
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              navigate('/dashboard');
+            } else {
+              alert(verifyData.message || 'Payment verification failed');
+            }
+          } catch (err) {
+            console.error('Verify error:', err);
+            alert('Error verifying payment.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          }
+        }
+      };
+
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response) {
+          alert('Payment failed: ' + (response.error?.description || 'Declined'));
+          setLoading(false);
+        });
+        rzp.open();
       } else {
-        alert(verifyData.message || 'Payment verification failed');
+        alert('Razorpay SDK could not be loaded. Please check your internet connection.');
+        setLoading(false);
       }
     } catch (err) {
       console.error(err);
       alert('Error initiating payment');
-    } finally {
       setLoading(false);
     }
   };
@@ -271,22 +363,12 @@ const Checkout = () => {
               </div>
 
               <ul className="space-y-3 mb-6 mt-6">
-                <li className="flex items-start gap-2 text-sm text-[#4A4A4A]">
-                  <CheckCircle2 className="w-4 h-4 text-[#A48255] shrink-0 mt-0.5" />
-                  <span>Premium Astrology Template</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-[#4A4A4A]">
-                  <CheckCircle2 className="w-4 h-4 text-[#A48255] shrink-0 mt-0.5" />
-                  <span>Mobile Responsive Design</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-[#4A4A4A]">
-                  <CheckCircle2 className="w-4 h-4 text-[#A48255] shrink-0 mt-0.5" />
-                  <span>Lead Generation Form</span>
-                </li>
-                <li className="flex items-start gap-2 text-sm text-[#4A4A4A]">
-                  <CheckCircle2 className="w-4 h-4 text-[#A48255] shrink-0 mt-0.5" />
-                  <span>Custom Domain Support</span>
-                </li>
+                {currentFeatures.map((feat, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-[#4A4A4A]">
+                    <CheckCircle2 className="w-4 h-4 text-[#A48255] shrink-0 mt-0.5" />
+                    <span>{feat}</span>
+                  </li>
+                ))}
               </ul>
 
               <div className="pt-4 border-t border-[#E8E2D9]">
